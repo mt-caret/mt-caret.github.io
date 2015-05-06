@@ -5,7 +5,7 @@ function update_center_date(str) {
 }
 
 function get_days_until_center(now) {
-  return center_date.diff(now, 'days');
+  return center_date.diff(now, 'days') - 1;
 }
 
 function main() {
