@@ -6,19 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>東方キャラ選び</title>
     <link href="th.css" rel="stylesheet">
+    <script src="th.js"></script>
   </head>
   <body>
-    <h1>東方キャラ選び</h1>
-    <p>東方に登場するキャラクターをランダムに選びます。</p>
-    <ul id="resultlist">
-      <li>-</li>
-    </ul>
-    <input type=text id="generatenum" size=1 value="1">
-    つ
-    <input type="button" id="generatebutton" value="生成">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
-    <script src="namelist.json"></script>
-    <script src="th.js"></script>
+    <div id='app'></div>
+    <script>
+      Elm.App.embed(document.getElementById('app'));
+    </script>
   </body>
 </html>
