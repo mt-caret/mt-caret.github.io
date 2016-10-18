@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang='ja'>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GNU social用みてるなうブックマークレット</title>
+  </head>
+  <body>
+    <p>
+      URL:
+      <input id='instance' type='text' value='https://freezepeach.xyz/' size='25'>
+      <button id='generate'>生成</button>
+      <a href='#' id='bookmarklet'>みてるなう</a>
+    </p>
+    <p>
+自分が利用しているGNU socialインスタンスのURLを入力し、「生成」を押した後
+「ブックマークレット」をブックマークバーまでドラッグ・アンド・ドロップして
+ください。
+    </p>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var instance_field = document.getElementById('instance');
+        var generate_button = document.getElementById('generate');
+        var bookmarklet_anchor = document.getElementById('bookmarklet');
+        generate_button.addEventListener('click', function() {
+          var url = instance_field.value;
+          if (url[url.length-1] !== '/') url += '/';
+          bookmarklet_anchor.href =
+            'javascript:window.open("' +
+            url +
+            'notice/new?status_textarea="+encodeURIComponent(document.title+"\\n"+document.URL+"\\n#みてるなう"));';
+        });
+      });
+    </script>
+  </body>
+</html>
