@@ -11211,34 +11211,27 @@ var _mt_caret$rootcalc$App$view = function (model) {
 								_0: A2(_mt_caret$rootcalc$App$renderRoot, true, model.currentNumber),
 								_1: {
 									ctor: '::',
-									_0: _elm_lang$html$Html$text(
-										_elm_lang$core$Basics$toString(
-											_mt_caret$rootcalc$App$roundFloat(
-												_mt_caret$rootcalc$App$root(model.currentNumber)))),
-									_1: {
-										ctor: '::',
-										_0: A2(
-											_elm_lang$html$Html$input,
-											{
+									_0: A2(
+										_elm_lang$html$Html$input,
+										{
+											ctor: '::',
+											_0: _elm_lang$html$Html_Attributes$type_('text'),
+											_1: {
 												ctor: '::',
-												_0: _elm_lang$html$Html_Attributes$type_('text'),
+												_0: _elm_lang$html$Html_Events$onInput(_mt_caret$rootcalc$App$NewInput),
 												_1: {
 													ctor: '::',
-													_0: _elm_lang$html$Html_Events$onInput(_mt_caret$rootcalc$App$NewInput),
+													_0: _elm_lang$html$Html_Attributes$value(model.input),
 													_1: {
 														ctor: '::',
-														_0: _elm_lang$html$Html_Attributes$value(model.input),
-														_1: {
-															ctor: '::',
-															_0: _elm_lang$html$Html_Attributes$size(_mt_caret$rootcalc$App$roundDigits + 2),
-															_1: {ctor: '[]'}
-														}
+														_0: _elm_lang$html$Html_Attributes$size(_mt_caret$rootcalc$App$roundDigits + 2),
+														_1: {ctor: '[]'}
 													}
 												}
-											},
-											{ctor: '[]'}),
-										_1: {ctor: '[]'}
-									}
+											}
+										},
+										{ctor: '[]'}),
+									_1: {ctor: '[]'}
 								}
 							}
 						}
