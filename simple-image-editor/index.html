@@ -14,15 +14,15 @@ canvas {
     </style>
   </head>
   <body>
-    <section class="section"><div class="container">
+    <section class="section">
       <div class="box">
         <div class="columns">
           <div class="column is-half">
-            <label class="label" for="sourceCanvas">Source:</label>
+            <label class="label" for="sourceCanvas">Source <span id="sourceInfo"></span>:</label>
             <canvas id="sourceCanvas"></canvas>
           </div>
           <div class="column is-half">
-            <label class="label" for="targetCanvas">Result:</label>
+            <label class="label" for="targetCanvas">Result <span id="targetInfo"></span>:</label>
             <canvas id="targetCanvas"></canvas>
           </div>
         </div>
@@ -40,7 +40,16 @@ canvas {
             <button id="downloadButton" class="button" disabled>Download Result</button>
           </div>
           <div class="control">
-            <button id="lumaButton" class="button">Convert to Grayscale (Luma)</button>
+            <button id="lumaButton" class="button">Grayscale (Luma)</button>
+          </div>
+          <div class="control">
+            <button id="halftoneButton" class="button">Grayscale (Density Pattern Halftone)</button>
+          </div>
+          <div class="control">
+            <button id="ditherButton" class="button">Grayscale (Dither Halftone)</button>
+          </div>
+          <div class="control">
+            <button id="resetButton" class="button">Reset</button>
           </div>
         </div>
 
@@ -122,6 +131,6 @@ canvas {
           </div>
         </div>
       </div>
-    </div></section>
+    </section>
   <script type="text/javascript" src="bundle.js"></script></body>
 </html>
