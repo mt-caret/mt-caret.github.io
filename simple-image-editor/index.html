@@ -40,15 +40,6 @@ canvas {
             <button id="downloadButton" class="button" disabled>Download Result</button>
           </div>
           <div class="control">
-            <button id="lumaButton" class="button">Grayscale (Luma)</button>
-          </div>
-          <div class="control">
-            <button id="halftoneButton" class="button">Grayscale (Density Pattern Halftone)</button>
-          </div>
-          <div class="control">
-            <button id="ditherButton" class="button">Grayscale (Dither Halftone)</button>
-          </div>
-          <div class="control">
             <button id="resetButton" class="button">Reset</button>
           </div>
         </div>
@@ -64,6 +55,60 @@ canvas {
               </span>
               <span id="file-name" class="file-name"></span>
             </label>
+          </div>
+        </div>
+
+        <label class="label">Histogram Equalization</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <div class="control">
+            <button id="histogramEqualizationButton" class="button">Run</button>
+          </div>
+        </div>
+
+        <label class="label">Image Projection</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <div class="control">
+            <button id="projectButton" class="button">Run</button>
+          </div>
+        </div>
+
+        <label class="label">Image Segmentation</label>
+        <div class="field has-addons">
+          <div class="control">
+             <input id="kmeansInput" class="input" type="text">
+          </div>
+          <div class="control">
+            <button id="kmeansButton" class="button">K-means</button>
+          </div>
+        </div>
+
+        <label class="label">Greyscaling</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <div class="control">
+            <button id="lumaButton" class="button">Grayscale (Luma)</button>
+          </div>
+          <div class="control">
+            <button id="halftoneButton" class="button">Grayscale (Density Pattern Halftone)</button>
+          </div>
+          <div class="control">
+            <button id="ditherButton" class="button">Grayscale (Dither Halftone)</button>
+          </div>
+        </div>
+
+        <label class="label">Noise Reduction</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <div class="control">
+            <button id="medianButton" class="button">Median Filter</button>
+          </div>
+        </div>
+
+        <label class="label">Gamma Correction</label>
+        <div class="field has-addons">
+          <div class="control">
+             <input id="gammaInput" class="input" type="text">
+          </div>
+          <div class="control">
+            <button id="gammaButton" class="button">Run</button>
           </div>
         </div>
 
