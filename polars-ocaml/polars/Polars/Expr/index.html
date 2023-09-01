@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Expr (polars.Polars.Expr)</title><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.2.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">polars</a> &#x00BB; <a href="../index.html">Polars</a> &#x00BB; Expr</nav><header class="odoc-preamble"><h1>Module <code><span>Polars.Expr</span></code></h1><p>An <code>Expr.t</code> is the basic building block of how to select columns from a dataframe. It is a representation of a lazy computation over a dataframe which can be executed via functions such as <code>Lazy_frame.select</code>/ <code>Data_frame.select</code> and <code>Lazy_frame.with_columns</code>/<code>Data_frame.with_columns</code>.</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type anchored" id="type-t"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> t</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-col"><a href="#val-col" class="anchor"></a><code><span><span class="keyword">val</span> col : <span>string <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>col</code> return column(s) in a dataframe:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ int &quot;ham&quot; [ 1; 2; 3 ]
+        ; int &quot;hamburger&quot; [ 11; 22; 33 ]
+        ; int &quot;foo&quot; [ 3; 2; 1 ]
+        ; string &quot;bar&quot; [ &quot;a&quot;; &quot;b&quot;; &quot;c&quot; ]
+        ]
+      ;;
+...
+
+# Data_frame.select_exn df ~exprs:Expr.[ col &quot;foo&quot; ]
+- : Data_frame.t =
+shape: (3, 1)
++-----+
+| foo |
+| --- |
+| i64 |
++=====+
+| 3   |
+| 2   |
+| 1   |
++-----+</code></pre><p>Use the wildcard <code>*</code> to represent all columns:</p><pre class="language-ocaml"><code># Data_frame.select_exn df ~exprs:Expr.[ col &quot;*&quot; ]
+- : Data_frame.t =
+shape: (3, 4)
++-----+-----------+-----+-----+
+| ham | hamburger | foo | bar |
+| --- | ---       | --- | --- |
+| i64 | i64       | i64 | str |
++=============================+
+| 1   | 11        | 3   | a   |
+| 2   | 22        | 2   | b   |
+| 3   | 33        | 1   | c   |
++-----+-----------+-----+-----+
+
+# Data_frame.select_exn df ~exprs:Expr.[ col &quot;*&quot; |&gt; exclude ~names:[ &quot;ham&quot; ] ]
+- : Data_frame.t =
+shape: (3, 3)
++-----------+-----+-----+
+| hamburger | foo | bar |
+| ---       | --- | --- |
+| i64       | i64 | str |
++=======================+
+| 11        | 3   | a   |
+| 22        | 2   | b   |
+| 33        | 1   | c   |
++-----------+-----+-----+</code></pre><p>Regular expressions are also supported:</p><pre class="language-ocaml"><code># Data_frame.select_exn df ~exprs:Expr.[ col &quot;^ham.*$&quot; ]
+- : Data_frame.t =
+shape: (3, 2)
++-----+-----------+
+| ham | hamburger |
+| --- | ---       |
+| i64 | i64       |
++=================+
+| 1   | 11        |
+| 2   | 22        |
+| 3   | 33        |
++-----+-----------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cols"><a href="#val-cols" class="anchor"></a><code><span><span class="keyword">val</span> cols : <span><span>string list</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Use <code>cols</code> to specify multiple columns at once:</p><pre class="language-ocaml"><code># Data_frame.select_exn df ~exprs:Expr.[ cols [ &quot;hamburger&quot;; &quot;foo&quot; ] ]
+- : Data_frame.t =
+shape: (3, 2)
++-----------+-----+
+| hamburger | foo |
+| ---       | --- |
+| i64       | i64 |
++=================+
+| 11        | 3   |
+| 22        | 2   |
+| 33        | 1   |
++-----------+-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-all"><a href="#val-all" class="anchor"></a><code><span><span class="keyword">val</span> all : <span>unit <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>all</code> selects all columns in the dataframe:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ bool &quot;a&quot; [ true; false; true ]
+        ; bool &quot;b&quot; [ false; false; false ]
+        ]
+  in
+  Data_frame.select_exn df ~exprs:Expr.[ all () |&gt; sum ]
+- : Data_frame.t =
+shape: (1, 2)
++-----+-----+
+| a   | b   |
+| --- | --- |
+| u32 | u32 |
++===========+
+| 2   | 0   |
++-----+-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exclude"><a href="#val-exclude" class="anchor"></a><code><span><span class="keyword">val</span> exclude : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>names:<span>string list</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>exclude</code> excludes columns from a multi-column expression:</p><pre class="language-ocaml"><code># let df =
+  Data_frame.create_exn
+    Series.
+      [ int &quot;aa&quot; [ 1; 2; 3 ]
+      ; stringo &quot;ba&quot; [ Some &quot;a&quot;; Some &quot;b&quot;; None ]
+      ; floato &quot;cc&quot; [ None; Some 2.5; Some 1.5 ]
+      ]
+    ;;
+val df : Data_frame.t =
+  shape: (3, 3)
++-----+------+------+
+| aa  | ba   | cc   |
+| --- | ---  | ---  |
+| i64 | str  | f64  |
++===================+
+| 1   | a    | null |
+| 2   | b    | 2.5  |
+| 3   | null | 1.5  |
++-----+------+------+
+
+# Data_frame.select_exn df ~exprs:Expr.[ all () |&gt; exclude ~names:[ &quot;ba&quot; ] ]
+- : Data_frame.t =
+shape: (3, 2)
++-----+------+
+| aa  | cc   |
+| --- | ---  |
+| i64 | f64  |
++============+
+| 1   | null |
+| 2   | 2.5  |
+| 3   | 1.5  |
++-----+------+</code></pre><p>Regular expressions are also supported:</p><pre class="language-ocaml"><code># Data_frame.select_exn df ~exprs:Expr.[ all () |&gt; exclude ~names:[ &quot;^.*a$&quot; ] ]
+- : Data_frame.t =
+shape: (3, 1)
++------+
+| cc   |
+| ---  |
+| f64  |
++======+
+| null |
+| 2.5  |
+| 1.5  |
++------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-element"><a href="#val-element" class="anchor"></a><code><span><span class="keyword">val</span> element : <span>unit <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>element ()</code> is an alias for an element being evaluated in an <code>List.eval</code> expression.</p><p>A horizontal rank computation by taking the elements of a list:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ int &quot;a&quot; [ 1; 8; 3 ]
+        ; int &quot;b&quot; [ 4; 5; 2 ]
+        ]
+  in
+  Data_frame.with_columns_exn df ~exprs:Expr.[
+    concat_list [ cols [&quot;a&quot;; &quot;b&quot;] ]
+    |&gt; List.eval ~expr:(element () |&gt; rank)
+    |&gt; alias ~name:&quot;rank&quot;
+  ]
+- : Data_frame.t =
+shape: (3, 3)
++-----+-----+-----------+
+| a   | b   | rank      |
+| --- | --- | ---       |
+| i64 | i64 | list[u32] |
++=======================+
+| 1   | 4   | [1, 2]    |
+| 8   | 5   | [2, 1]    |
+| 3   | 2   | [2, 1]    |
++-----+-----+-----------+</code></pre><p>A mathematical operation on array elements:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ int &quot;a&quot; [ 1; 8; 3 ]
+        ; int &quot;b&quot; [ 4; 5; 2 ]
+        ]
+  in
+  Data_frame.with_columns_exn df ~exprs:Expr.[
+    concat_list [ cols [&quot;a&quot;; &quot;b&quot;] ]
+    |&gt; List.eval ~expr:(element () * int 2)
+    |&gt; alias ~name:&quot;a_b_doubled&quot;
+  ]
+- : Data_frame.t =
+shape: (3, 3)
++-----+-----+-------------+
+| a   | b   | a_b_doubled |
+| --- | --- | ---         |
+| i64 | i64 | list[i64]   |
++=========================+
+| 1   | 4   | [2, 8]      |
+| 8   | 5   | [16, 10]    |
+| 3   | 2   | [6, 4]      |
++-----+-----+-------------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cast"><a href="#val-cast" class="anchor"></a><code><span><span class="keyword">val</span> cast : <span>?strict:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>to_:<a href="../Data_type/index.html#type-t">Data_type.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>cast</code> casts the values to a different data type. <code>strict</code> defaults to true, and raises an error if the conversion could not be done, for example, due to an overflow.</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ int &quot;a&quot; [ 1; 8; 3 ]
+        ; string &quot;b&quot; [ &quot;4&quot;; &quot;5&quot;; &quot;2&quot; ]
+        ]
+  in
+  Data_frame.with_columns_exn df ~exprs:Expr.[
+    col &quot;a&quot; |&gt; cast ~to_:Float64
+  ; col &quot;b&quot; |&gt; cast ~to_:Int32
+  ]
+- : Data_frame.t =
+shape: (3, 2)
++-----+-----+
+| a   | b   |
+| --- | --- |
+| f64 | i32 |
++===========+
+| 1.0 | 4   |
+| 8.0 | 5   |
+| 3.0 | 2   |
++-----+-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-null"><a href="#val-null" class="anchor"></a><code><span><span class="keyword">val</span> null : <span>unit <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>null</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>string</code>, <code>naive_date</code>, <code>naive_datetime</code>, and <code>series</code> are expressions representing literal values.</p><pre class="language-ocaml"><code># let df = Data_frame.create_exn Series.[ int &quot;a&quot; [ 1; 2; 3 ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;a&quot; + int 1 ]
+- : Data_frame.t =
+shape: (3, 1)
++-----+
+| a   |
+| --- |
+| i64 |
++=====+
+| 2   |
+| 3   |
+| 4   |
++-----+
+
+# let df = Data_frame.create_exn Series.[ string &quot;a&quot; [ &quot;1&quot;; &quot;2&quot;; &quot;3&quot; ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;a&quot; + string &quot;1&quot; ]
+- : Data_frame.t =
+shape: (3, 1)
++-----+
+| a   |
+| --- |
+| str |
++=====+
+| 11  |
+| 21  |
+| 31  |
++-----+
+
+# let df = Data_frame.create_exn Series.[ int &quot;a&quot; [ 1; 2; 3 ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;a&quot; + series (Series.int &quot;b&quot; [ 1; 1; 1 ]) ]
+- : Data_frame.t =
+shape: (3, 1)
++-----+
+| a   |
+| --- |
+| i64 |
++=====+
+| 2   |
+| 3   |
+| 4   |
++-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-int"><a href="#val-int" class="anchor"></a><code><span><span class="keyword">val</span> int : <span>int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-float"><a href="#val-float" class="anchor"></a><code><span><span class="keyword">val</span> float : <span>float <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-bool"><a href="#val-bool" class="anchor"></a><code><span><span class="keyword">val</span> bool : <span>bool <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-string"><a href="#val-string" class="anchor"></a><code><span><span class="keyword">val</span> string : <span>string <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-naive_date"><a href="#val-naive_date" class="anchor"></a><code><span><span class="keyword">val</span> naive_date : <span><a href="../Common/Naive_date/index.html#type-t">Common.Naive_date.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-naive_datetime"><a href="#val-naive_datetime" class="anchor"></a><code><span><span class="keyword">val</span> naive_datetime : <span><a href="../Common/Naive_datetime/index.html#type-t">Common.Naive_datetime.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-series"><a href="#val-series" class="anchor"></a><code><span><span class="keyword">val</span> series : <span><a href="../Series/index.html#type-t">Series.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-sort"><a href="#val-sort" class="anchor"></a><code><span><span class="keyword">val</span> sort : <span>?descending:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>sort</code> sorts this column. When used in a projection/selection context, the whole column is sorted. When used in a groupby context, the groups are sorted.</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.[ into &quot;a&quot; [ Some 1; None; Some 3; Some 2 ] ]
+...
+
+# Data_frame.with_columns_exn df ~exprs:Expr.[ col &quot;a&quot; |&gt; sort ]
+- : Data_frame.t =
+shape: (4, 1)
++------+
+| a    |
+| ---  |
+| i64  |
++======+
+| null |
+| 1    |
+| 2    |
+| 3    |
++------+
+
+# Data_frame.with_columns_exn df ~exprs:Expr.[ col &quot;a&quot; |&gt; sort ~descending:true ]
+- : Data_frame.t =
+shape: (4, 1)
++------+
+| a    |
+| ---  |
+| i64  |
++======+
+| null |
+| 3    |
+| 2    |
+| 1    |
++------+
+
+# let df =
+    Data_frame.create_exn
+      Series.
+        [ string &quot;group&quot; [ &quot;one&quot;; &quot;one&quot;; &quot;one&quot;; &quot;two&quot;; &quot;two&quot;; &quot;two&quot; ]
+        ; int &quot;value&quot; [ 1; 98; 2; 3; 99; 4 ]
+        ]
+val df : Data_frame.t =
+  shape: (6, 2)
++-------+-------+
+| group | value |
+| ---   | ---   |
+| str   | i64   |
++===============+
+| one   | 1     |
+| one   | 98    |
+| one   | 2     |
+| two   | 3     |
+| two   | 99    |
+| two   | 4     |
++-------+-------+
+
+# Data_frame.groupby
+    df
+    ~by:Expr.[ col &quot;group&quot; ]
+    ~agg:Expr.[ col &quot;value&quot; |&gt; sort ]
+- : (Data_frame.t, string) result =
+Core.Ok
+ shape: (2, 2)
++-------+------------+
+| group | value      |
+| ---   | ---        |
+| str   | list[i64]  |
++====================+
+| one   | [1, 2, 98] |
+| two   | [3, 4, 99] |
++-------+------------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-sort_by"><a href="#val-sort_by" class="anchor"></a><code><span><span class="keyword">val</span> sort_by : <span>?descending:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>by:<span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>sort_by</code> sorts this column based on the ordering on expressions passed to <code>by</code>. When used in a projection/selection context, the whole column is sorted. When used in a groupby context, the groups are sorted.</p><p>Pass a single column name ot sort by that column:</p><pre class="language-ocaml"><code># let df =
+  Data_frame.create_exn
+    Series.
+      [ string &quot;group&quot; [ &quot;a&quot;; &quot;a&quot;; &quot;b&quot;; &quot;b&quot; ]
+      ; int &quot;value1&quot; [ 1; 3; 4; 2 ]
+      ; int &quot;value2&quot; [ 8; 7; 6; 5 ]
+      ]
+...
+
+# Data_frame.select_exn
+    df
+    ~exprs:Expr.[ col &quot;group&quot; |&gt; sort_by ~by:[ col &quot;value1&quot; ] ]
+- : Data_frame.t =
+shape: (4, 1)
++-------+
+| group |
+| ---   |
+| str   |
++=======+
+| a     |
+| b     |
+| a     |
+| b     |
++-------+</code></pre><p>Sorting by expressions is also supported:</p><pre class="language-ocaml"><code># Data_frame.select_exn
+    df
+    ~exprs:Expr.[ col &quot;group&quot; |&gt; sort_by ~by:[ col &quot;value1&quot; + col &quot;value2&quot; ] ]
+- : Data_frame.t =
+shape: (4, 1)
++-------+
+| group |
+| ---   |
+| str   |
++=======+
+| b     |
+| a     |
+| a     |
+| b     |
++-------+</code></pre><p>Sort by multiple columns by passing a list of columns:</p><pre class="language-ocaml"><code># Data_frame.select_exn
+    df
+    ~exprs:Expr.[ col &quot;group&quot; |&gt; sort_by ~by:[ col &quot;value1&quot;; col &quot;value2&quot; ] ~descending:true ]
+- : Data_frame.t =
+shape: (4, 1)
++-------+
+| group |
+| ---   |
+| str   |
++=======+
+| b     |
+| a     |
+| b     |
+| a     |
++-------+</code></pre><p>When sorting in a groupby context, the groups are sorted:</p><pre class="language-ocaml"><code># Data_frame.groupby
+    df
+    ~by:Expr.[ col &quot;group&quot; ]
+    ~agg:Expr.[ col &quot;value1&quot; |&gt; sort_by ~by:[ col &quot;value2&quot; ] ]
+- : (Data_frame.t, string) result =
+Core.Ok
+ shape: (2, 2)
++-------+-----------+
+| group | value1    |
+| ---   | ---       |
+| str   | list[i64] |
++===================+
+| a     | [3, 1]    |
+| b     | [2, 4]    |
++-------+-----------+</code></pre><p>Take a single row from each group where a column attains its minimal value within that group:</p><pre class="language-ocaml"><code># Data_frame.groupby_exn
+    df
+    ~by:Expr.[ col &quot;group&quot; ] ~agg:Expr.[ all () |&gt; sort_by ~by:[ col &quot;value2&quot; ] ]
+- : Data_frame.t =
+shape: (2, 3)
++-------+-----------+-----------+
+| group | value1    | value2    |
+| ---   | ---       | ---       |
+| str   | list[i64] | list[i64] |
++===============================+
+| a     | [3, 1]    | [7, 8]    |
+| b     | [2, 4]    | [5, 6]    |
++-------+-----------+-----------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-set_sorted_flag"><a href="#val-set_sorted_flag" class="anchor"></a><code><span><span class="keyword">val</span> set_sorted_flag : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>sorted:<span>[ `Ascending <span>| `Descending</span> <span>| `Not</span> ]</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>set_sorted_flag</code> allows manipulation of the flag used for toggling the fast path for sorted arrays. Please not that this would result in incorrect results if the underlying data is not sorted.</p><pre class="language-ocaml"><code># let df = Data_frame.create_exn Series.[ int &quot;values&quot; [ 1; 2; 3 ] ] in
+  Data_frame.select_exn
+    df
+    ~exprs:Expr.[ col &quot;values&quot; |&gt; set_sorted_flag ~sorted:`Ascending |&gt; max ]
+- : Data_frame.t =
+shape: (1, 1)
++--------+
+| values |
+| ---    |
+| i64    |
++========+
+| 3      |
++--------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-first"><a href="#val-first" class="anchor"></a><code><span><span class="keyword">val</span> first : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Get the first value:</p><pre class="language-ocaml"><code># let df = Data_frame.create_exn Series.[ int &quot;a&quot; [ 1; 1; 2 ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;a&quot; |&gt; first ]
+- : Data_frame.t =
+shape: (1, 1)
++-----+
+| a   |
+| --- |
+| i64 |
++=====+
+| 1   |
++-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-last"><a href="#val-last" class="anchor"></a><code><span><span class="keyword">val</span> last : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Get the first value:</p><pre class="language-ocaml"><code># let df = Data_frame.create_exn Series.[ int &quot;a&quot; [ 1; 1; 2 ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;a&quot; |&gt; last ]
+- : Data_frame.t =
+shape: (1, 1)
++-----+
+| a   |
+| --- |
+| i64 |
++=====+
+| 2   |
++-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-reverse"><a href="#val-reverse" class="anchor"></a><code><span><span class="keyword">val</span> reverse : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>reverse</code> reverses the selection:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ int &quot;A&quot; [ 1; 2; 3; 4; 5 ]
+        ; string &quot;fruits&quot; [ &quot;banana&quot;; &quot;banana&quot;; &quot;apple&quot;; &quot;apple&quot;; &quot;banana&quot; ]
+        ; int &quot;B&quot; [ 5; 4; 3; 2; 1 ]
+        ; string &quot;cars&quot; [ &quot;beetle&quot;; &quot;audi&quot;; &quot;beetle&quot;; &quot;beetle&quot;; &quot;beetle&quot; ]
+        ]
+  in
+  Data_frame.select_exn df ~exprs:Expr.[ all (); all () |&gt; reverse |&gt; suffix ~suffix:&quot;_reverse&quot; ]
+- : Data_frame.t =
+shape: (5, 8)
++-----+--------+-----+--------+-----------+----------------+-----------+--------------+
+| A   | fruits | B   | cars   | A_reverse | fruits_reverse | B_reverse | cars_reverse |
+| --- | ---    | --- | ---    | ---       | ---            | ---       | ---          |
+| i64 | str    | i64 | str    | i64       | str            | i64       | str          |
++=====================================================================================+
+| 1   | banana | 5   | beetle | 5         | banana         | 1         | beetle       |
+| 2   | banana | 4   | audi   | 4         | apple          | 2         | beetle       |
+| 3   | apple  | 3   | beetle | 3         | apple          | 3         | beetle       |
+| 4   | apple  | 2   | beetle | 2         | banana         | 4         | audi         |
+| 5   | banana | 1   | beetle | 1         | banana         | 5         | beetle       |
++-----+--------+-----+--------+-----------+----------------+-----------+--------------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-head"><a href="#val-head" class="anchor"></a><code><span><span class="keyword">val</span> head : <span>?length:int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>head</code> returns the first n rows, defaulting to 10:</p><pre class="language-ocaml"><code># let df = Data_frame.create_exn Series.[ int &quot;foo&quot; [ 1; 2; 3; 4; 5; 6; 7 ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;foo&quot; |&gt; head ~length:3 ]
+- : Data_frame.t =
+shape: (3, 1)
++-----+
+| foo |
+| --- |
+| i64 |
++=====+
+| 1   |
+| 2   |
+| 3   |
++-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-tail"><a href="#val-tail" class="anchor"></a><code><span><span class="keyword">val</span> tail : <span>?length:int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>tail</code> returns the last n rows, defaulting to 10:</p><pre class="language-ocaml"><code># let df = Data_frame.create_exn Series.[ int &quot;foo&quot; [ 1; 2; 3; 4; 5; 6; 7 ] ] in
+  Data_frame.select_exn df ~exprs:Expr.[ col &quot;foo&quot; |&gt; tail ~length:3 ]
+- : Data_frame.t =
+shape: (3, 1)
++-----+
+| foo |
+| --- |
+| i64 |
++=====+
+| 5   |
+| 6   |
+| 7   |
++-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-take"><a href="#val-take" class="anchor"></a><code><span><span class="keyword">val</span> take : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>idx:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>take</code> returns the value based on index:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ string &quot;group&quot; [ &quot;one&quot;; &quot;one&quot;; &quot;one&quot;; &quot;two&quot;; &quot;two&quot;; &quot;two&quot; ]
+        ; int &quot;value&quot; [ 1; 98; 2; 3; 99; 4 ] ]
+  in
+  Data_frame.groupby_exn
+    df
+    ~by:Expr.[ col &quot;group&quot; ]
+    ~agg:Expr.[ col &quot;value&quot; |&gt; take ~idx:(int 1) ]
+- : Data_frame.t =
+shape: (2, 2)
++-------+-------+
+| group | value |
+| ---   | ---   |
+| str   | i64   |
++===============+
+| one   | 98    |
+| two   | 99    |
++-------+-------+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-sample_n"><a href="#val-sample_n" class="anchor"></a><code><span><span class="keyword">val</span> sample_n : 
+  <span>?seed:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?fixed_seed:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>n:int <span class="arrow">&#45;&gt;</span></span>
+  <span>with_replacement:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>shuffle:bool <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>sample_n</code> samples n times from expression:</p><pre class="language-ocaml"><code># let df =Data_frame.create_exn Series.[ int &quot;a&quot; [ 1; 2; 3 ] ] in
+  Data_frame.select_exn
+    df
+    ~exprs:
+      Expr.
+        [ col &quot;a&quot; |&gt; sample_n ~seed:0 ~fixed_seed:true ~n:2 ~with_replacement:true ~shuffle:true ]
+- : Data_frame.t =
+shape: (2, 1)
++-----+
+| a   |
+| --- |
+| i64 |
++=====+
+| 2   |
+| 2   |
++-----+</code></pre><ul class="at-tags"><li class="parameter"><span class="at-tag">parameter</span> <span class="value">seed</span> <p>The seed for the random number generator; if not passed will to use the built-in random number generator in Rust.</p></li></ul><ul class="at-tags"><li class="parameter"><span class="at-tag">parameter</span> <span class="value">fixed_seed</span> <p>if true, the seed will not be incremented between draws, making output predictable when executing concurrently (defaults to true).</p></li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-filter"><a href="#val-filter" class="anchor"></a><code><span><span class="keyword">val</span> filter : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>predicate:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>filter</code> filters a single column according to a predicate:</p><pre class="language-ocaml"><code># let df =
+    Data_frame.create_exn
+      Series.
+        [ string &quot;group_col&quot; [ &quot;g1&quot;; &quot;g1&quot;; &quot;g2&quot; ]
+        ; int &quot;b&quot; [ 1; 2; 3 ]
+        ]
+  in
+  Data_frame.groupby_exn
+    df
+    ~by:Expr.[ col &quot;group_col&quot; ]
+    ~agg:
+      Expr.
+        [ col &quot;b&quot; |&gt; filter ~predicate:(col &quot;b&quot; &lt; int 2) |&gt; sum |&gt; alias ~name:&quot;lt&quot;
+        ; col &quot;b&quot; |&gt; filter ~predicate:(col &quot;b&quot; &gt;= int 2) |&gt; sum |&gt; alias ~name:&quot;gte&quot;
+        ]
+  |&gt; Data_frame.sort_exn ~by_column:[ &quot;group_col&quot; ]
+- : Data_frame.t =
+shape: (2, 3)
++-----------+-----+-----+
+| group_col | lt  | gte |
+| ---       | --- | --- |
+| str       | i64 | i64 |
++=======================+
+| g1        | 1   | 2   |
+| g2        | 0   | 3   |
++-----------+-----+-----+</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-ceil"><a href="#val-ceil" class="anchor"></a><code><span><span class="keyword">val</span> ceil : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-floor"><a href="#val-floor" class="anchor"></a><code><span><span class="keyword">val</span> floor : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-clip_min_float"><a href="#val-clip_min_float" class="anchor"></a><code><span><span class="keyword">val</span> clip_min_float : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>min:float <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-clip_max_float"><a href="#val-clip_max_float" class="anchor"></a><code><span><span class="keyword">val</span> clip_max_float : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>max:float <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-clip_min_int"><a href="#val-clip_min_int" class="anchor"></a><code><span><span class="keyword">val</span> clip_min_int : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>min:int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-clip_max_int"><a href="#val-clip_max_int" class="anchor"></a><code><span><span class="keyword">val</span> clip_max_int : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>max:int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pow"><a href="#val-pow" class="anchor"></a><code><span><span class="keyword">val</span> pow : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-sum"><a href="#val-sum" class="anchor"></a><code><span><span class="keyword">val</span> sum : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-mean"><a href="#val-mean" class="anchor"></a><code><span><span class="keyword">val</span> mean : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-median"><a href="#val-median" class="anchor"></a><code><span><span class="keyword">val</span> median : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-max"><a href="#val-max" class="anchor"></a><code><span><span class="keyword">val</span> max : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-min"><a href="#val-min" class="anchor"></a><code><span><span class="keyword">val</span> min : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-arg_max"><a href="#val-arg_max" class="anchor"></a><code><span><span class="keyword">val</span> arg_max : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-arg_min"><a href="#val-arg_min" class="anchor"></a><code><span><span class="keyword">val</span> arg_min : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-count"><a href="#val-count" class="anchor"></a><code><span><span class="keyword">val</span> count : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-count_"><a href="#val-count_" class="anchor"></a><code><span><span class="keyword">val</span> count_ : <span>unit <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-n_unique"><a href="#val-n_unique" class="anchor"></a><code><span><span class="keyword">val</span> n_unique : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-approx_unique"><a href="#val-approx_unique" class="anchor"></a><code><span><span class="keyword">val</span> approx_unique : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explode"><a href="#val-explode" class="anchor"></a><code><span><span class="keyword">val</span> explode : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-over"><a href="#val-over" class="anchor"></a><code><span><span class="keyword">val</span> over : 
+  <span>?mapping_strategy:<span>[ `Groups_to_rows <span>| `Explode</span> <span>| `Join</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>partition_by:<span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-concat_list"><a href="#val-concat_list" class="anchor"></a><code><span><span class="keyword">val</span> concat_list : <span><span><a href="#type-t">t</a> <span class="xref-unresolved">Nonempty_list</span>.t</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-null_count"><a href="#val-null_count" class="anchor"></a><code><span><span class="keyword">val</span> null_count : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-is_null"><a href="#val-is_null" class="anchor"></a><code><span><span class="keyword">val</span> is_null : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-is_not_null"><a href="#val-is_not_null" class="anchor"></a><code><span><span class="keyword">val</span> is_not_null : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-is_nan"><a href="#val-is_nan" class="anchor"></a><code><span><span class="keyword">val</span> is_nan : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-is_not_nan"><a href="#val-is_not_nan" class="anchor"></a><code><span><span class="keyword">val</span> is_not_nan : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-fill_null"><a href="#val-fill_null" class="anchor"></a><code><span><span class="keyword">val</span> fill_null : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>with_:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-fill_null'"><a href="#val-fill_null'" class="anchor"></a><code><span><span class="keyword">val</span> fill_null' : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>strategy:<a href="../Fill_null_strategy/index.html#type-t">Fill_null_strategy.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-interpolate"><a href="#val-interpolate" class="anchor"></a><code><span><span class="keyword">val</span> interpolate : <span>?method_:<span>[ `Linear <span>| `Nearest</span> ]</span> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-fill_nan"><a href="#val-fill_nan" class="anchor"></a><code><span><span class="keyword">val</span> fill_nan : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>with_:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-rank"><a href="#val-rank" class="anchor"></a><code><span><span class="keyword">val</span> rank : 
+  <span>?method_:<span>[ `Average <span>| `Dense</span> <span>| `Max</span> <span>| `Min</span> <span>| `Ordinal</span> <span>| `Random</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?descending:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>?seed:int <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-when_"><a href="#val-when_" class="anchor"></a><code><span><span class="keyword">val</span> when_ : <span><span><span>(<a href="#type-t">t</a> * <a href="#type-t">t</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span> <span>otherwise:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-shift"><a href="#val-shift" class="anchor"></a><code><span><span class="keyword">val</span> shift : <span>?fill_value:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>periods:int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cum_count"><a href="#val-cum_count" class="anchor"></a><code><span><span class="keyword">val</span> cum_count : <span>?reverse:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cum_sum"><a href="#val-cum_sum" class="anchor"></a><code><span><span class="keyword">val</span> cum_sum : <span>?reverse:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cum_prod"><a href="#val-cum_prod" class="anchor"></a><code><span><span class="keyword">val</span> cum_prod : <span>?reverse:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cum_min"><a href="#val-cum_min" class="anchor"></a><code><span><span class="keyword">val</span> cum_min : <span>?reverse:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cum_max"><a href="#val-cum_max" class="anchor"></a><code><span><span class="keyword">val</span> cum_max : <span>?reverse:bool <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-alias"><a href="#val-alias" class="anchor"></a><code><span><span class="keyword">val</span> alias : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>name:string <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-prefix"><a href="#val-prefix" class="anchor"></a><code><span><span class="keyword">val</span> prefix : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>prefix:string <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-suffix"><a href="#val-suffix" class="anchor"></a><code><span><span class="keyword">val</span> suffix : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>suffix:string <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-round"><a href="#val-round" class="anchor"></a><code><span><span class="keyword">val</span> round : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>decimals:int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-equal"><a href="#val-equal" class="anchor"></a><code><span><span class="keyword">val</span> equal : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-include"><details open="open"><summary class="spec include"><code><span><span class="keyword">include</span> <a href="../Common/module-type-Compare/index.html">Common.Compare</a> <span class="keyword">with</span> <span><span class="keyword">type</span> <a href="../Common/module-type-Compare/index.html#type-t">t</a> := <a href="#type-t">t</a></span></span></code></summary><div class="odoc-spec"><div class="spec value anchored" id="val-(=)"><a href="#val-(=)" class="anchor"></a><code><span><span class="keyword">val</span> (=) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(&lt;&gt;)"><a href="#val-(&lt;&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;&gt;) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(&gt;)"><a href="#val-(&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&gt;) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(&gt;=)"><a href="#val-(&gt;=)" class="anchor"></a><code><span><span class="keyword">val</span> (&gt;=) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(&lt;)"><a href="#val-(&lt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(&lt;=)"><a href="#val-(&lt;=)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;=) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div></details></div><div class="odoc-include"><details open="open"><summary class="spec include"><code><span><span class="keyword">include</span> <a href="../Common/module-type-Logic/index.html">Common.Logic</a> <span class="keyword">with</span> <span><span class="keyword">type</span> <a href="../Common/module-type-Logic/index.html#type-t">t</a> := <a href="#type-t">t</a></span></span></code></summary><div class="odoc-spec"><div class="spec value anchored" id="val-not"><a href="#val-not" class="anchor"></a><code><span><span class="keyword">val</span> not : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-and_"><a href="#val-and_" class="anchor"></a><code><span><span class="keyword">val</span> and_ : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-or_"><a href="#val-or_" class="anchor"></a><code><span><span class="keyword">val</span> or_ : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-xor"><a href="#val-xor" class="anchor"></a><code><span><span class="keyword">val</span> xor : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(!)"><a href="#val-(!)" class="anchor"></a><code><span><span class="keyword">val</span> (!) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(&amp;&amp;)"><a href="#val-(&amp;&amp;)" class="anchor"></a><code><span><span class="keyword">val</span> (&amp;&amp;) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(||)"><a href="#val-(||)" class="anchor"></a><code><span><span class="keyword">val</span> (||) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(lxor)"><a href="#val-(lxor)" class="anchor"></a><code><span><span class="keyword">val</span> (lxor) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div></details></div><div class="odoc-include"><details open="open"><summary class="spec include"><code><span><span class="keyword">include</span> <a href="../Common/module-type-Numeric/index.html">Common.Numeric</a> <span class="keyword">with</span> <span><span class="keyword">type</span> <a href="../Common/module-type-Numeric/index.html#type-t">t</a> := <a href="#type-t">t</a></span></span></code></summary><div class="odoc-spec"><div class="spec value anchored" id="val-add"><a href="#val-add" class="anchor"></a><code><span><span class="keyword">val</span> add : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-sub"><a href="#val-sub" class="anchor"></a><code><span><span class="keyword">val</span> sub : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-mul"><a href="#val-mul" class="anchor"></a><code><span><span class="keyword">val</span> mul : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-div"><a href="#val-div" class="anchor"></a><code><span><span class="keyword">val</span> div : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(+)"><a href="#val-(+)" class="anchor"></a><code><span><span class="keyword">val</span> (+) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(-)"><a href="#val-(-)" class="anchor"></a><code><span><span class="keyword">val</span> (-) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(*)"><a href="#val-(*)" class="anchor"></a><code><span><span class="keyword">val</span> (*) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(/)"><a href="#val-(/)" class="anchor"></a><code><span><span class="keyword">val</span> (/) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div></details></div><div class="odoc-spec"><div class="spec value anchored" id="val-floor_div"><a href="#val-floor_div" class="anchor"></a><code><span><span class="keyword">val</span> floor_div : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-(//)"><a href="#val-(//)" class="anchor"></a><code><span><span class="keyword">val</span> (//) : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Dt"><a href="#module-Dt" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Dt/index.html">Dt</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Str"><a href="#module-Str" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Str/index.html">Str</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-List"><a href="#module-List" class="anchor"></a><code><span><span class="keyword">module</span> <a href="List/index.html">List</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div></div></body></html>
