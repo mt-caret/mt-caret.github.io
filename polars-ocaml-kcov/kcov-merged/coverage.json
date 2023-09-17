@@ -1,0 +1,20 @@
+{
+  "files": [
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/target/debug/build/chrono-tz-0aa73b6cd7cecec5/out/timezones.rs", "percent_covered": "0.67", "covered_lines": "16", "total_lines": "2399"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/data_frame.rs", "percent_covered": "87.90", "covered_lines": "305", "total_lines": "347"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/misc.rs", "percent_covered": "93.75", "covered_lines": "60", "total_lines": "64"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/series.rs", "percent_covered": "80.92", "covered_lines": "318", "total_lines": "393"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/expr.rs", "percent_covered": "73.38", "covered_lines": "430", "total_lines": "586"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/sql_context.rs", "percent_covered": "73.68", "covered_lines": "28", "total_lines": "38"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/lib.rs", "percent_covered": "100.00", "covered_lines": "1", "total_lines": "1"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/utils.rs", "percent_covered": "85.55", "covered_lines": "225", "total_lines": "263"},
+    {"file": "/home/ubuntu/dev/ocaml/polars/polars-ocaml/_build/default/rust/polars-ocaml/src/lazy_frame.rs", "percent_covered": "64.10", "covered_lines": "175", "total_lines": "273"}
+  ],
+  "percent_covered": "35.70",
+  "covered_lines": 1558,
+  "total_lines": 4364,
+  "percent_low": 25,
+  "percent_high": 75,
+  "command": "inline_test_runner_polars_tests.exe",
+  "date": "2023-09-17 15:58:55"
+}
